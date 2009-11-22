@@ -1,6 +1,6 @@
-class CaptureLock(object):
+class DatabaseLock(object):
     def __init__(self, db):
-        self.lock_file = db.name + ".capture-lock"
+        self.lock_file = db.name + ".whatup-lock"
 
     def __enter__(self):
         import os
@@ -9,7 +9,7 @@ class CaptureLock(object):
                     os.O_CREAT | os.O_WRONLY | os.O_EXCL)
         except OSError:
             raise RuntimeError(
-                    "could not obtain capture lock--delete '%s' if necessary"
+                    "could not obtain database lock--delete '%s' if necessary"
                     % self.lock_file)
 
         return self

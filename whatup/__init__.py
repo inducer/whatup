@@ -200,9 +200,9 @@ def main():
     if cmd == "capture":
         db = Database(options.db)
 
-        from whatup.capture import run_capture, CaptureLock
+        from whatup.capture import run_capture, DatabaseLock
         if options.daemon:
-            with CaptureLock(db) as cl:
+            with DatabaseLock(db) as cl:
                 # make sure we can get it to catch user mistakes,
                 # 'real' lock occurs later
                 pass
@@ -210,13 +210,13 @@ def main():
             daemonize(options.pidfile, options.logfile)
 
             try:
-                with CaptureLock(db) as cl:
+                with DatabaseLock(db) as cl:
                     run_capture(db, options.interval)
             finally:
                 os.unlink(options.pidfile)
 
         else:
-            with CaptureLock(db) as cl:
+            with DatabaseLock(db) as cl:
                 run_capture(db, options.interval)
 
     elif cmd == "dump":
@@ -261,7 +261,12 @@ def main():
             sys.exit(1)
 
         from whatup.datamodel import fetch_records
-        fetch_records(Database(options.db), Database(args[1]))
+        tgt_db = Database(options.db)
+        src_db = Database(args[1])
+        from whatup.capture import DatabaseLock
+        with DatabaseLock(tgt_db):
+            with DatabaseLock(src_db):
+                fetch_records(tgt_db, src_db)
 
     else:
         parser.print_help()

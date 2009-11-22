@@ -134,5 +134,5 @@ def fetch_records(tgt_db, src_db):
     for sample in src_session.query(Sample).order_by(Sample.timestamp):
         src_session.delete(sample)
         tgt_session.add(sample.duplicate())
-        src_session.commit()
-        tgt_session.commit()
+    src_session.commit()
+    tgt_session.commit()
