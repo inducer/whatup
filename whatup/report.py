@@ -42,7 +42,11 @@ def format_histogram(tags_and_amounts, total, use_unicode=True, width=70):
     from math import floor, ceil
     if use_unicode:
         def format_bar(amt):
-            scaled = amt*width/max_amount
+            if max_amount != 0:
+                scaled = amt*width/max_amount
+            else:
+                scaled = 0
+
             full = int(floor(scaled))
             eighths = int(ceil((scaled-full)*8))
             if eighths:
@@ -57,7 +61,7 @@ def format_histogram(tags_and_amounts, total, use_unicode=True, width=70):
 
     print "\n".join("%20s | %3.0f%% | %9s | %s" % (
         name,
-        amount/total*100,
+        amount/total*100 if total != 0 else 0,
         format_duration(amount),
         format_bar(amount))
         for name, amount in tags_and_amounts)

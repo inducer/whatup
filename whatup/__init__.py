@@ -123,7 +123,7 @@ def main():
     from optparse import OptionParser
 
     description = """
-    COMMAND may be one of 'capture', 'dump', 'stop', 'report', 
+    COMMAND may be one of 'start', 'stop', 'dump', 'report', 
     'fetch <otherdb>'.
     """
 
@@ -197,7 +197,7 @@ def main():
 
         return make_classifier(config_file, options.classifier, args)
 
-    if cmd == "capture":
+    if cmd in ["capture", "start"]:
         db = Database(options.db)
 
         from whatup.capture import run_capture, DatabaseLock
