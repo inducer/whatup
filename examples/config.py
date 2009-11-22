@@ -9,14 +9,14 @@ class DefaultClassifier:
     default_ignore_set = set(["idle"])
 
     def __call__(self, sample):
-        import re
-        if sample.idletime > 60:
-            yield "idle"
-
         focused = sample.focused_window
         if not focused:
             yield "idle"
             return
+
+        import re
+        if sample.idletime > 60:
+            yield "idle"
 
         productive = "no"
 

@@ -38,7 +38,8 @@ class DataModel(object):
         from sqlalchemy.orm import mapper, relation
 
         mapper(Sample, self.samples, properties={
-            'windows': relation(Window, backref='sample'),
+            'windows': relation(Window, backref='sample',
+                cascade="all, delete, delete-orphan"),
             })
         mapper(Window, self.windows)
 
@@ -53,6 +54,18 @@ class Sample(object):
         self.timezonename = timezonename
         self.hostname = hostname
         self.idletime = idletime
+
+    def duplicate(self):
+        result = Sample(
+            self.timestamp,
+            self.timezoneoffset,
+            self.timezonename,
+            self.hostname,
+            self.idletime,
+            )
+        for w in self.windows:
+            result.windows.append(w.duplicate())
+        return result
 
     @property
     def focused_window(self):
@@ -93,15 +106,33 @@ class Sample(object):
 
 
 
-
-
-
-
-
-
 class Window(object):
     def __init__(self, sample, title, program, focused):
-        self.sample = sample
+        if sample is not None:
+            self.sample = sample
         self.title = title
         self.program = program
         self.focused = focused
+
+    def duplicate(self):
+        result = Window(
+                None,
+                self.title,
+                self.program,
+                self.focused,
+                )
+        return result
+
+
+
+
+# fetching --------------------------------------------------------------------
+def fetch_records(tgt_db, src_db):
+    tgt_session = tgt_db.sessionmaker()
+    src_session = src_db.sessionmaker()
+
+    for sample in src_session.query(Sample).order_by(Sample.timestamp):
+        src_session.delete(sample)
+        tgt_session.add(sample.duplicate())
+        src_session.commit()
+        tgt_session.commit()

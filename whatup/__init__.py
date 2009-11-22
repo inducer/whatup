@@ -123,7 +123,8 @@ def main():
     from optparse import OptionParser
 
     description = """
-    COMMAND may be one of 'capture', 'dump', 'stop', 'report'.
+    COMMAND may be one of 'capture', 'dump', 'stop', 'report', 
+    'fetch <otherdb>'.
     """
 
 
@@ -168,6 +169,7 @@ def main():
         sys.exit(1)
 
     cmd = args[0]
+
     def get_config_file():
         config_file = options.config
 
@@ -252,6 +254,14 @@ def main():
         from whatup.report import run_classifier
         run_classifier(db, make_classifier(config_file),
                 ignore, only, show_unclassified=options.show_unclassified)
+
+    elif cmd == "fetch":
+        if len(args) < 2:
+            print>> sys.stderr, "no source database specified"
+            sys.exit(1)
+
+        from whatup.datamodel import fetch_records
+        fetch_records(Database(options.db), Database(args[1]))
 
     else:
         parser.print_help()
