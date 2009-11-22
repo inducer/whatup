@@ -40,12 +40,14 @@ class DefaultClassifier:
 
         if "Navigator" in focused.program:
             # web
+            if "Synoptic" in focused.title:
+                productive = "yes"
+                yield "synoptic"
+
             if "SPIEGEL" in focused.title:
-                yield Category("productive", "no")
                 yield "spiegel"
 
             if "Google Reader" in focused.title:
-                yield Category("productivity", "no")
                 yield "rss"
 
             yield "web"
