@@ -1,0 +1,10 @@
+*~
+.*.swp
+build
+*.db
+dist
+*egg-info
+.svn
+*.pyc
+*.orig
+setuptools.pth
