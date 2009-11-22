@@ -157,6 +157,10 @@ def main():
             help="Which classifier class to use from your config file. "
             "Defaults to 'DefaultClassifier'.",
             default="DefaultClassifier")
+    parser.add_option("-i", "--ignore", metavar="TAG,TAG", help="Ignore samples with these tags.")
+    parser.add_option("-o", "--only", metavar="TAG,TAG", help="Only show these tags.")
+    parser.add_option("-u", "--show-unclassified", action="store_true", 
+            help="Show un-ignored, unclassified sample events.")
     options, args = parser.parse_args()
 
     if len(args) < 1:
@@ -164,6 +168,32 @@ def main():
         sys.exit(1)
 
     cmd = args[0]
+    def get_config_file():
+        config_file = options.config
+
+        if config_file is None:
+            for p in get_config_paths():
+                fn = add_my_config_path(p)
+                if os.path.exists(fn):
+                    config_file = fn
+                    break
+
+        return config_file
+
+
+    def make_classifier(config_file):
+        from whatup.report import make_classifier
+
+        args = {}
+        if options.classifier_args:
+            for arg in options.classifier_args.split(","):
+                equal_idx = arg.find("=")
+                if equal_idx == -1:
+                    args[arg] = True
+                else:
+                    args[arg[:equal_idx]] = arg[equal_idx+1:]
+
+        return make_classifier(config_file, options.classifier, args)
 
     if cmd == "capture":
         db = Database(options.db)
@@ -189,7 +219,13 @@ def main():
 
     elif cmd == "dump":
         from whatup.report import dump_database
-        dump_database(Database(options.db))
+        config_file = get_config_file()
+        if config_file is not None:
+            classifier = make_classifier(config_file)
+        else:
+            classifier = None
+
+        dump_database(Database(options.db), classifier)
 
     elif cmd == "stop":
         with open(options.pidfile, "r") as pidf:
@@ -197,32 +233,25 @@ def main():
             os.kill(int(pidf.read()), SIGINT)
 
     elif cmd == "report":
-        config_file = options.config
+        config_file = get_config_file()
 
         if config_file is None:
-            for p in get_config_paths():
-                fn = add_my_config_path(p)
-                if os.path.exists(fn):
-                    config_file = fn
-                    break
-
-            if config_file is None:
-                raise RuntimeError("you need to create a classifier file in '%s'"
-                        % add_my_config_path(get_user_config_path()))
-
-        args = {}
-        if options.classifier_args:
-            for arg in options.classifier_args.split(","):
-                equal_idx = arg.find("=")
-                if equal_idx == -1:
-                    args[arg] = True
-                else:
-                    args[arg[:equal_idx]] = arg[equal_idx+1:]
+            raise RuntimeError("you need to create a classifier file in '%s'"
+                    % add_my_config_path(get_user_config_path()))
 
         db = Database(options.db)
 
-        from whatup.report import run_classifier_by_name
-        run_classifier_by_name(db, config_file, options.classifier, args)
+        ignore = None
+        if options.ignore:
+            ignore = set(options.ignore.split(","))
+
+        only = set()
+        if options.only:
+            only = set(options.only.split(","))
+
+        from whatup.report import run_classifier
+        run_classifier(db, make_classifier(config_file),
+                ignore, only, show_unclassified=options.show_unclassified)
 
     else:
         parser.print_help()

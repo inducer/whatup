@@ -67,9 +67,21 @@ def run_capture(db, interval=60):
 
     from whatup.datamodel import Sample, Window
     while True:
-        windows = root.get_full_property(client_list_atom, Xatom.WINDOW).value
+        windows_reply = root.get_full_property(client_list_atom, Xatom.WINDOW)
+        if windows_reply is not None:
+            windows = windows_reply.value
+        else:
+            import sys
+            print>>sys.stderr, "WARNING: _NET_CLIENT_LIST not present"
+            windows = []
 
-        focus_id = dpy.get_input_focus().focus.id
+        focus_win = dpy.get_input_focus().focus
+        if isinstance(focus_win, X11Window):
+            focus_id = focus_win.id
+        else:
+            import sys
+            print>>sys.stderr, "WARNING: no focused window found"
+            focus_id = None
 
         secs = time.time()
         localtime = time.localtime(secs)
