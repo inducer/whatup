@@ -196,12 +196,15 @@ def main():
 
     if cmd == "capture":
         db = Database(options.db)
+
+        from whatup.capture import DatabaseLock, run_capture
         with DatabaseLock(db) as cl:
             run_capture(db, options.interval)
 
     elif cmd == "start":
         db = Database(options.db)
 
+        from whatup.capture import DatabaseLock, run_capture
         with DatabaseLock(db) as cl:
             # make sure we can get it to catch user mistakes,
             # 'real' lock occurs later
