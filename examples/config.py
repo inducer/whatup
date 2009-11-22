@@ -50,7 +50,7 @@ class DefaultClassifier:
 
             yield "web"
 
-        if "kmail" in focused.program:
+        if "kontact" in focused.program:
             yield "mail"
             productive = "maybe"
 
