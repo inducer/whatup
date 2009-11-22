@@ -135,9 +135,6 @@ def main():
             default=60, help="Sample capture interval")
     parser.add_option("--db", metavar="DB_FILE",
             help="Use database file DB_FILE")
-    parser.add_option("-d", "--daemon",
-            help="Fork capture daemon into background",
-            action="store_true")
     parser.add_option(
             "--config", 
             help="Configuration file", metavar="CONFIG.PY")
@@ -197,27 +194,31 @@ def main():
 
         return make_classifier(config_file, options.classifier, args)
 
-    if cmd in ["capture", "start"]:
+    if cmd == "capture":
+        db = Database(options.db)
+        with DatabaseLock(db) as cl:
+            run_capture(db, options.interval)
+
+    elif cmd == "start":
         db = Database(options.db)
 
-        from whatup.capture import run_capture, DatabaseLock
-        if options.daemon:
-            with DatabaseLock(db) as cl:
-                # make sure we can get it to catch user mistakes,
-                # 'real' lock occurs later
-                pass
+        with DatabaseLock(db) as cl:
+            # make sure we can get it to catch user mistakes,
+            # 'real' lock occurs later
+            pass
 
-            daemonize(options.pidfile, options.logfile)
+        daemonize(options.pidfile, options.logfile)
 
-            try:
-                with DatabaseLock(db) as cl:
-                    run_capture(db, options.interval)
-            finally:
-                os.unlink(options.pidfile)
-
-        else:
+        try:
             with DatabaseLock(db) as cl:
                 run_capture(db, options.interval)
+        finally:
+            os.unlink(options.pidfile)
+
+    elif cmd == "stop":
+        with open(options.pidfile, "r") as pidf:
+            from signal import SIGINT
+            os.kill(int(pidf.read()), SIGINT)
 
     elif cmd == "dump":
         from whatup.report import dump_database
@@ -228,11 +229,6 @@ def main():
             classifier = None
 
         dump_database(Database(options.db), classifier)
-
-    elif cmd == "stop":
-        with open(options.pidfile, "r") as pidf:
-            from signal import SIGINT
-            os.kill(int(pidf.read()), SIGINT)
 
     elif cmd == "report":
         config_file = get_config_file()
