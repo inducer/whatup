@@ -38,6 +38,9 @@ class DefaultClassifier:
             yield Category("project", "paper")
             productive = "yes"
 
+        if focused.program in ["okular", "evince"]:
+            productive = "yes"
+
         if "Navigator" in focused.program:
             # web
             if "Synoptic" in focused.title:
@@ -66,5 +69,6 @@ class DefaultClassifier:
             if productive == "no":
                 productive = "maybe"
 
+        yield Category("prg", focused.program)
         yield Category("productive", productive)
         yield Category("host", sample.hostname)

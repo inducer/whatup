@@ -61,7 +61,7 @@ def format_histogram(tags_and_amounts, total, use_unicode=True, width=70):
 
     max_amount = max(c for t, c in tags_and_amounts)
 
-    print "\n".join("%20s | %3.0f%% | %9s | %s" % (
+    print "\n".join("%-20s | %3.0f%% | %9s | %s" % (
         name,
         amount/total*100 if total != 0 else 0,
         format_duration(amount),
@@ -158,7 +158,7 @@ def run_classifier(db, classifier, ignore=None, only=set(),
             data_period = last_time-first_time
 
         bins = sorted(bins.iteritems())
-        format_histogram(bins, total_time)
+        format_histogram(bins, classified_time)
         print
         if total_time:
             print "Data period:      %s" % format_duration(data_period)
