@@ -165,6 +165,8 @@ def main():
             help="Show ignored sample events.")
     parser.add_option("--force-utf8",  action="store_true", 
             help="Force UTF-8 output.")
+    parser.add_option("--min-minutes",  type="float",
+            help="Minimum number of minutes before a tag gets reported.")
     options, args = parser.parse_args()
 
     if len(args) < 1:
@@ -274,7 +276,8 @@ def main():
 
         from whatup.report import run_classifier
         run_classifier(db, make_classifier(config_file),
-                ignore, only, force_utf8=options.force_utf8)
+                ignore, only, force_utf8=options.force_utf8,
+                min_minutes=options.min_minutes)
 
     elif cmd == "fetch":
         if len(args) < 2:
