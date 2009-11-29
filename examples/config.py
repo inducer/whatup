@@ -42,18 +42,32 @@ class DefaultClassifier:
             productive = "yes"
 
         if "Navigator" in focused.group:
-            # web
+            yield "web"
+
+            url_item = sample.focused_url
+
             if "Synoptic" in focused.detail:
                 productive = "yes"
                 yield "synoptic"
+            elif url_item is not None:
+                url = url_item.detail
 
-            if "SPIEGEL" in focused.detail:
-                yield "spiegel"
-
-            if "Google Reader" in focused.detail:
-                yield "rss"
-
-            yield "web"
+                if "spiegel.de" in url:
+                    yield "spiegel"
+                elif "google.com/reader" in url:
+                    yield "rss"
+                elif "google.com/search" in url:
+                    productive = "maybe"
+                    yield "websearch"
+                elif "google.com/scholar" in url:
+                    productive = "yes"
+                    yield "literature"
+                elif "jstor.org" in url:
+                    productive = "yes"
+                    yield "literature"
+                elif "mathjobs.org" in url:
+                    productive = "yes"
+                    yield Category("project", "job-search")
 
         if "kontact" in focused.group:
             yield "mail"
