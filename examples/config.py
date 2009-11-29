@@ -21,20 +21,20 @@ class DefaultClassifier:
         productive = "no"
 
         # projects
-        work_match = re.search("~/work/([^/]+)", focused.title)
+        work_match = re.search("~/work/([^/]+)", focused.detail)
         if work_match:
             yield Category("project", work_match.group(1))
             productive = "maybe"
-        elif "~/src" in focused.title:
+        elif "~/src" in focused.detail:
             yield Category("project", "hedge")
             productive = "yes"
-        elif "~/research/job-search" in focused.title:
+        elif "~/research/job-search" in focused.detail:
             yield Category("project", "job-search")
             productive = "yes"
-        elif "~/research/thesis" in focused.title:
+        elif "~/research/thesis" in focused.detail:
             yield Category("project", "thesis")
             productive = "yes"
-        elif "~/research/writeups" in focused.title:
+        elif "~/research/writeups" in focused.detail:
             yield Category("project", "paper")
             productive = "yes"
 
@@ -43,14 +43,14 @@ class DefaultClassifier:
 
         if "Navigator" in focused.program:
             # web
-            if "Synoptic" in focused.title:
+            if "Synoptic" in focused.detail:
                 productive = "yes"
                 yield "synoptic"
 
-            if "SPIEGEL" in focused.title:
+            if "SPIEGEL" in focused.detail:
                 yield "spiegel"
 
-            if "Google Reader" in focused.title:
+            if "Google Reader" in focused.detail:
                 yield "rss"
 
             yield "web"

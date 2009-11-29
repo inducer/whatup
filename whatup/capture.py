@@ -24,7 +24,7 @@ class DatabaseLock(object):
 
 def run_capture(db, interval=60):
     from Xlib import display, Xatom
-    from Xlib.xobject.drawable import Window as X11Window
+    from Xlib.xobject.drawable import Window
     import Xlib.protocol.rq as rq
     import whatup.xss as xss
 
@@ -65,7 +65,7 @@ def run_capture(db, interval=60):
     from socket import gethostname
     hostname = gethostname()
 
-    from whatup.datamodel import Sample, Window
+    from whatup.datamodel import Sample, SampleItem
     while True:
         windows_reply = root.get_full_property(client_list_atom, Xatom.WINDOW)
         if windows_reply is not None:
@@ -76,7 +76,7 @@ def run_capture(db, interval=60):
             windows = []
 
         focus_win = dpy.get_input_focus().focus
-        if isinstance(focus_win, X11Window):
+        if isinstance(focus_win, Window):
             focus_id = focus_win.id
         else:
             import sys
@@ -100,16 +100,22 @@ def run_capture(db, interval=60):
                 idletime=get_idle_time())
 
         for wid in windows:
-            x11win = X11Window(dpy.display, wid)
+            x11win = Window(dpy.display, wid)
             focused_subwin = follow_tree_until(x11win, lambda subwin: subwin.id == focus_id)
             is_focused = focused_subwin is not None
 
+            if is_focused:
+                what = "focused-window"
+            else:
+                what = "window"
+
             title = unicode(get_name(x11win))
-            dbwin = Window(
+            dbwin = SampleItem(
                     sample=smp,
-                    title=title,
+                    what=what,
                     program=unicode(x11win.get_wm_class()[0]),
-                    focused=is_focused)
+                    detail=title,
+                    session=session)
 
         session.add(smp)
         session.commit()

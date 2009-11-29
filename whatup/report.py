@@ -4,7 +4,10 @@ def dump_database(db, classifier=None):
     from whatup.datamodel import Sample
     from sqlalchemy.orm import eagerload
 
-    for sample in session.query(Sample).options(eagerload("windows")):
+    for sample in session.query(Sample).options(
+            eagerload("items"),
+            eagerload("items.data"),
+            ):
         print sample.stringify(classifier)
         print
 
@@ -93,7 +96,9 @@ def run_classifier(db, classifier, ignore=None, only=set(),
     from whatup.datamodel import Sample
     from sqlalchemy.orm import eagerload
     for sample in (session.query(Sample)
-            .options(eagerload("windows"))
+            .options(
+                eagerload("items"),
+                eagerload("items.data"))
             .order_by(Sample.timestamp)):
 
         if last_timestamp is None:

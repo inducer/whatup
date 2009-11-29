@@ -12,13 +12,13 @@ class DataModel(object):
 
         from sqlalchemy import Table, Column, \
                 Integer, Float, Text, UnicodeText, Boolean, Unicode, ForeignKey, \
-                MetaData
+                MetaData, Index
 
         cls = DataModel
 
         cls.metadata = MetaData()
 
-        cls.samples = Table('sample', self.metadata,
+        cls.sample = Table('sample', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('timestamp', Float, index=True),
                 Column('timezoneoffset', Float),
@@ -27,21 +27,36 @@ class DataModel(object):
                 Column('idletime', Float),
                 )
 
-        cls.windows = Table('window', self.metadata,
+        cls.item_data = Table('item_data', self.metadata,
+                Column('id', Integer, primary_key=True),
+                Column('what', Text()),
+                Column('program', UnicodeText()),
+                Column('detail', UnicodeText()),
+                )
+
+        cls.sample_item = Table('sample_item', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('sample_id', Integer, ForeignKey('sample.id'), index=True),
-                Column('title', UnicodeText()),
-                Column('program', UnicodeText()),
-                Column('focused', Boolean()),
+                Column('item_data_id', Integer, ForeignKey('item_data.id'), index=True),
                 )
+
+        Index("sample_props", 
+                cls.item_data.c.what,
+                cls.item_data.c.program,
+                cls.item_data.c.detail,
+                unique=True)
 
         from sqlalchemy.orm import mapper, relation
 
-        mapper(Sample, self.samples, properties={
-            'windows': relation(Window, backref='sample',
+        mapper(Sample, cls.sample, properties={
+            'items': relation(SampleItem, backref='sample',
                 cascade="all, delete, delete-orphan"),
             })
-        mapper(Window, self.windows)
+        mapper(ItemData, cls.item_data, properties={
+            'sample_items': relation(SampleItem, backref='data',
+                cascade="all, delete, delete-orphan"),
+            })
+        mapper(SampleItem, cls.sample_item)
 
 
 
@@ -55,7 +70,7 @@ class Sample(object):
         self.hostname = hostname
         self.idletime = idletime
 
-    def duplicate(self):
+    def duplicate(self, tgt_session):
         result = Sample(
             self.timestamp,
             self.timezoneoffset,
@@ -63,15 +78,15 @@ class Sample(object):
             self.hostname,
             self.idletime,
             )
-        for w in self.windows:
-            result.windows.append(w.duplicate())
+        for s in self.items:
+            result.items.append(w.duplicate(tgt_session))
         return result
 
     @property
     def focused_window(self):
-        for w in self.windows:
-            if w.focused:
-                return w
+        for i in self.items:
+            if i.data.what == "focused-window":
+                return i
 
     def __unicode__(self):
         return self.stringify()
@@ -94,34 +109,67 @@ class Sample(object):
             lines.append("    Tags: %s" % ",".join(str(tag) for tag in classifier(self)))
         lines.append("")
 
-        for win in self.windows:
-            s = u"'%s' (program %s)" % (win.title, win.program)
-            if win.focused:
-                s = "FOCUSED " + s
-            else:
-                s = "  " + s
-            lines.append("    "+s)
+        for item in self.items:
+            lines.append("    "+unicode(item))
         return u"\n".join(lines)
 
 
 
 
-class Window(object):
-    def __init__(self, sample, title, program, focused):
+class SampleItem(object):
+    def __init__(self, sample, what=None, program=None, detail=None, session=None):
         if sample is not None:
             self.sample = sample
-        self.title = title
-        self.program = program
-        self.focused = focused
 
-    def duplicate(self):
-        result = Window(
+        if what is not None:
+            assert session is not None
+            self.data = make_item_data(session, what, program, detail)
+
+    def duplicate(self, tgt_session):
+        result = SampleItem(
                 None,
-                self.title,
+                self.what,
                 self.program,
-                self.focused,
-                )
+                self.detail,
+                tgt_session)
         return result
+
+    @property
+    def detail(self):
+        return self.data.detail
+
+    @property
+    def what(self):
+        return self.data.what
+
+    @property
+    def program(self):
+        return self.data.program
+
+    def __unicode__(self):
+        return u"%s '%s' (program %s)" % (self.what, self.detail, self.program)
+
+
+
+class ItemData(object):
+    def __init__(self, what, program, detail):
+        self.what = what
+        self.program = program
+        self.detail = detail
+
+
+
+
+def make_item_data(session, what, program, detail):
+    qry = (session.query(ItemData)
+            .filter(ItemData.what==what)
+            .filter(ItemData.program==program)
+            .filter(ItemData.detail==detail))
+
+    if qry.count() == 1:
+        return qry.one()
+    else:
+        return ItemData(what, program, detail)
 
 
 
@@ -133,6 +181,6 @@ def fetch_records(tgt_db, src_db):
 
     for sample in src_session.query(Sample).order_by(Sample.timestamp):
         src_session.delete(sample)
-        tgt_session.add(sample.duplicate())
+        tgt_session.add(sample.duplicate(tgt_session))
     src_session.commit()
     tgt_session.commit()
