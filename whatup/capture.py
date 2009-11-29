@@ -144,9 +144,13 @@ def run_capture(db, interval, mozrepl_port):
         else:
             try:
                 mozrepl.read_until("repl>")
-                mozrepl.write("for (var i = 0; i < num; i++) {"
-                        "var b= gBrowser.getBrowserAtIndex(i); "
-                        "try { repl.print(b.currentURI.spec); } catch (e) {} }")
+                mozrepl.write("{"
+                        "var num = gBrowser.browsers.length;"
+                        "for (var i = 0; i < num; i++)"
+                        "{"
+                        "  var b= gBrowser.getBrowserAtIndex(i); "
+                        "  try { repl.print(b.currentURI.spec); } catch (e) {}"
+                        "}}")
                 all_tabs = (mozrepl.read_until("repl>")
                         .replace("repl>", "")
                         .strip()
@@ -167,6 +171,7 @@ def run_capture(db, interval, mozrepl_port):
                     what = "focused-moz-tab"
                 else:
                     what = "moz-tab"
+
                 SampleItem(sample=smp,
                         what=what,
                         group=unicode("mozilla"),
