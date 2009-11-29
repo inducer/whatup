@@ -30,7 +30,7 @@ class DataModel(object):
         cls.item_data = Table('item_data', self.metadata,
                 Column('id', Integer, primary_key=True),
                 Column('what', Text()),
-                Column('program', UnicodeText()),
+                Column('group', UnicodeText()),
                 Column('detail', UnicodeText()),
                 )
 
@@ -42,7 +42,7 @@ class DataModel(object):
 
         Index("sample_props", 
                 cls.item_data.c.what,
-                cls.item_data.c.program,
+                cls.item_data.c.group,
                 cls.item_data.c.detail,
                 unique=True)
 
@@ -117,19 +117,19 @@ class Sample(object):
 
 
 class SampleItem(object):
-    def __init__(self, sample, what=None, program=None, detail=None, session=None):
+    def __init__(self, sample, what=None, group=None, detail=None, session=None):
         if sample is not None:
             self.sample = sample
 
         if what is not None:
             assert session is not None
-            self.data = make_item_data(session, what, program, detail)
+            self.data = make_item_data(session, what, group, detail)
 
     def duplicate(self, tgt_session):
         result = SampleItem(
                 None,
                 self.what,
-                self.program,
+                self.group,
                 self.detail,
                 tgt_session)
         return result
@@ -143,33 +143,33 @@ class SampleItem(object):
         return self.data.what
 
     @property
-    def program(self):
-        return self.data.program
+    def group(self):
+        return self.data.group
 
     def __unicode__(self):
-        return u"%s '%s' (program %s)" % (self.what, self.detail, self.program)
+        return u"%s '%s' (group %s)" % (self.what, self.detail, self.group)
 
 
 
 class ItemData(object):
-    def __init__(self, what, program, detail):
+    def __init__(self, what, group, detail):
         self.what = what
-        self.program = program
+        self.group = group
         self.detail = detail
 
 
 
 
-def make_item_data(session, what, program, detail):
+def make_item_data(session, what, group, detail):
     qry = (session.query(ItemData)
             .filter(ItemData.what==what)
-            .filter(ItemData.program==program)
+            .filter(ItemData.group==group)
             .filter(ItemData.detail==detail))
 
     if qry.count() == 1:
         return qry.one()
     else:
-        return ItemData(what, program, detail)
+        return ItemData(what, group, detail)
 
 
 

@@ -38,10 +38,10 @@ class DefaultClassifier:
             yield Category("project", "paper")
             productive = "yes"
 
-        if focused.program in ["okular", "evince"]:
+        if focused.group in ["okular", "evince"]:
             productive = "yes"
 
-        if "Navigator" in focused.program:
+        if "Navigator" in focused.group:
             # web
             if "Synoptic" in focused.detail:
                 productive = "yes"
@@ -55,20 +55,20 @@ class DefaultClassifier:
 
             yield "web"
 
-        if "kontact" in focused.program:
+        if "kontact" in focused.group:
             yield "mail"
             productive = "maybe"
 
-        if "konsole" in focused.program:
+        if "konsole" in focused.group:
             yield "shell"
             if productive == "no":
                 productive = "maybe"
 
-        if "gvim" in focused.program:
+        if "gvim" in focused.group:
             yield "edit"
             if productive == "no":
                 productive = "maybe"
 
-        yield Category("prg", focused.program)
+        yield Category("prg", focused.group)
         yield Category("productive", productive)
         yield Category("host", sample.hostname)

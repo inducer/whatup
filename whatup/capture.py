@@ -22,11 +22,14 @@ class DatabaseLock(object):
 
 
 
-def run_capture(db, interval=60):
+def run_capture(db, interval, mozrepl_port):
     from Xlib import display, Xatom
     from Xlib.xobject.drawable import Window
     import Xlib.protocol.rq as rq
     import whatup.xss as xss
+    import netifaces
+    import socket
+    import telnetlib
 
     dpy = display.Display()
 
@@ -99,6 +102,7 @@ def run_capture(db, interval=60):
                 hostname=hostname,
                 idletime=get_idle_time())
 
+        # capture X11 windows -------------------------------------------------
         for wid in windows:
             x11win = Window(dpy.display, wid)
             focused_subwin = follow_tree_until(x11win, lambda subwin: subwin.id == focus_id)
@@ -110,13 +114,66 @@ def run_capture(db, interval=60):
                 what = "window"
 
             title = unicode(get_name(x11win))
-            dbwin = SampleItem(
-                    sample=smp,
+            SampleItem(sample=smp,
                     what=what,
-                    program=unicode(x11win.get_wm_class()[0]),
+                    group=unicode(x11win.get_wm_class()[0]),
                     detail=title,
                     session=session)
 
+        # capture interface addresses -----------------------------------------
+        for iface_name in netifaces.interfaces():
+            if iface_name.startswith("lo") or iface_name.startswith("pan"):
+                continue
+
+            for addr_dict in netifaces.ifaddresses(iface_name).get(socket.AF_INET, []):
+                if "addr" in addr_dict:
+                    SampleItem(sample=smp,
+                            what="inet-addr",
+                            group=unicode(iface_name),
+                            detail=unicode(addr_dict["addr"]),
+                            session=session)
+
+        # capture firefox tabs ------------------------------------------------
+        # uses mozrepl, http://wiki.github.com/bard/mozrepl
+
+        try:
+            mozrepl = telnetlib.Telnet("localhost", mozrepl_port)
+        except socket.error:
+            from warnings import warn
+            warn("could not connect to mozrepl")
+        else:
+            try:
+                mozrepl.read_until("repl>")
+                mozrepl.write("for (var i = 0; i < num; i++) {"
+                        "var b= gBrowser.getBrowserAtIndex(i); "
+                        "try { repl.print(b.currentURI.spec); } catch (e) {} }")
+                all_tabs = (mozrepl.read_until("repl>")
+                        .replace("repl>", "")
+                        .strip()
+                        .strip('"').split("\n"))
+
+                mozrepl.write("content.location.href;")
+                current_tab = (mozrepl.read_until("repl>")
+                        .replace("repl>", "")
+                        .strip()
+                        .strip('"'))
+                mozrepl.write("repl.quit();")
+
+            finally:
+                mozrepl.close()
+
+            for tab in all_tabs:
+                if tab == current_tab:
+                    what = "focused-moz-tab"
+                else:
+                    what = "moz-tab"
+                SampleItem(sample=smp,
+                        what=what,
+                        group=unicode("mozilla"),
+                        detail=unicode(tab),
+                        session=session)
+
+        # commit sample -------------------------------------------------------
         session.add(smp)
         session.commit()
 

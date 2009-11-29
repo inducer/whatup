@@ -149,6 +149,8 @@ def main():
     parser.add_option(
             "-a", "--classifier-args", 
             metavar="KEY=VALUE,KEY=VALUE")
+    parser.add_option("--mozrepl-port", metavar="PORT", type="int",
+            default=4242)
     parser.add_option(
             "-c", "--classifier", 
             metavar="CLASSIFIER_CLASS",
@@ -199,7 +201,9 @@ def main():
 
         from whatup.capture import DatabaseLock, run_capture
         with DatabaseLock(db) as cl:
-            run_capture(db, options.interval)
+            run_capture(db, 
+                    interval=options.interval, 
+                    mozrepl_port=options.mozrepl_port)
 
     elif cmd == "start":
         db = Database(options.db)
@@ -214,7 +218,9 @@ def main():
 
         try:
             with DatabaseLock(db) as cl:
-                run_capture(db, options.interval)
+                run_capture(db, 
+                        interval=options.interval, 
+                        mozrepl_port=options.mozrepl_port)
         finally:
             os.unlink(options.pidfile)
 

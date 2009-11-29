@@ -30,6 +30,7 @@ def main():
 
           install_requires=[
               "SqlAlchemy>=0.5.1",
+              "netifaces",
               ],
 
           scripts=["bin/whatup"],
