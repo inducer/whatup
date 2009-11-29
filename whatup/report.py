@@ -126,8 +126,10 @@ def format_histogram(tags_and_amounts, total, use_unicode=True, width=70):
 
     max_amount = max(c for t, c in tags_and_amounts)
 
-    return "\n".join("%-20s | %3.0f%% | %9s | %s" % (
-        name,
+    max_tag_length = max(len(name) for name, amount in tags_and_amounts)
+
+    return "\n".join("%s | %3.0f%% | %9s | %s" % (
+        name.ljust(max_tag_length),
         amount/total*100 if total != 0 else 0,
         format_duration(amount),
         format_bar(amount))
@@ -137,7 +139,7 @@ def format_histogram(tags_and_amounts, total, use_unicode=True, width=70):
 
 
 def run_classifier(db, classifier, ignore=None, only=set(),
-        force_utf8=False):
+        force_utf8=False, min_minutes=None):
     session = db.sessionmaker()
 
     if force_utf8:
@@ -200,6 +202,11 @@ def run_classifier(db, classifier, ignore=None, only=set(),
         data_period = last_time-first_time
 
     bins = sorted(bins.iteritems())
+    if min_minutes is not None:
+        bins = [(name, amount) 
+                for name, amount in bins
+                if amount/60 > min_minutes]
+
     do_print(format_histogram(bins, classified_time, do_print))
     do_print("")
     if total_time:

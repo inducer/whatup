@@ -52,19 +52,38 @@ class DefaultClassifier:
             elif url_item is not None:
                 url = url_item.detail
 
-                if "spiegel.de" in url:
-                    yield "spiegel"
-                elif "google.com/reader" in url:
+                from urlparse import urlparse
+                yield Category("site", urlparse(url).netloc)
+
+                if "google.com/reader" in url:
                     yield "rss"
+
                 elif "google.com/search" in url:
                     productive = "maybe"
                     yield "websearch"
+
+                elif "docs.python.org" in url:
+                    productive = "maybe"
+                    yield "documentation"
+                elif "documen.tician.de" in url:
+                    productive = "yes"
+                    yield "documentation"
+
+                #literature
                 elif "google.com/scholar" in url:
+                    productive = "yes"
+                    yield "literature"
+                elif "arxiv.org" in url:
+                    productive = "yes"
+                    yield "literature"
+                elif "sciencedirect.com" in url:
                     productive = "yes"
                     yield "literature"
                 elif "jstor.org" in url:
                     productive = "yes"
                     yield "literature"
+
+                # job search
                 elif "mathjobs.org" in url:
                     productive = "yes"
                     yield Category("project", "job-search")
