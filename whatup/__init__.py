@@ -161,6 +161,10 @@ def main():
     parser.add_option("-o", "--only", metavar="TAG,TAG", help="Only show these tags.")
     parser.add_option("-u", "--show-unclassified", action="store_true", 
             help="Show un-ignored, unclassified sample events.")
+    parser.add_option("--show-ignored", action="store_true", 
+            help="Show ignored sample events.")
+    parser.add_option("--force-utf8",  action="store_true", 
+            help="Force UTF-8 output.")
     options, args = parser.parse_args()
 
     if len(args) < 1:
@@ -237,7 +241,19 @@ def main():
         else:
             classifier = None
 
-        dump_database(Database(options.db), classifier)
+        ignore = None
+        if options.ignore:
+            ignore = set(options.ignore.split(","))
+
+        only = set()
+        if options.only:
+            only = set(options.only.split(","))
+
+        dump_database(Database(options.db), classifier,
+                ignore, only,
+                show_unclassified=options.show_unclassified, 
+                show_ignored=options.show_ignored,
+                force_utf8=options.force_utf8)
 
     elif cmd == "report":
         config_file = get_config_file()
@@ -258,7 +274,7 @@ def main():
 
         from whatup.report import run_classifier
         run_classifier(db, make_classifier(config_file),
-                ignore, only, show_unclassified=options.show_unclassified)
+                ignore, only, force_utf8=options.force_utf8)
 
     elif cmd == "fetch":
         if len(args) < 2:

@@ -88,10 +88,17 @@ class Sample(object):
             if i.data.what == "focused-window":
                 return i
 
+    @property
+    def focused_url(self):
+        for i in self.items:
+            if i.data.what == "focused-moz-tab":
+                return i
+
+
     def __unicode__(self):
         return self.stringify()
 
-    def stringify(self, classifier=None):
+    def stringify(self, tags=None):
         import time
 
         lines = ["At %s our time in timezone %s (offset %g h vs here):" % (
@@ -105,8 +112,8 @@ class Sample(object):
             lines.append("    Idle time: %g minutes" % (self.idletime/60))
 
         lines.append("    Host: %s" % self.hostname)
-        if classifier:
-            lines.append("    Tags: %s" % ",".join(str(tag) for tag in classifier(self)))
+        if tags:
+            lines.append("    Tags: %s" % ",".join(str(tag) for tag in tags))
         lines.append("")
 
         for item in self.items:
