@@ -1,3 +1,8 @@
+from weakref import WeakKeyDictionary
+
+
+
+
 MAPPERS_DEFINED = [False]
 
 
@@ -160,17 +165,28 @@ class ItemData(object):
 
 
 
+ITEM_DATA_CACHE = WeakKeyDictionary()
+
+
+
+
 def make_item_data(session, what, group, detail):
-    qry = (session.query(ItemData)
-            .filter(ItemData.what==what)
-            .filter(ItemData.group==group)
-            .filter(ItemData.detail==detail))
+    sess_cache = ITEM_DATA_CACHE.setdefault(session, {})
+    try:
+        return sess_cache[what, group, detail]
+    except KeyError:
+        qry = (session.query(ItemData)
+                .filter(ItemData.what==what)
+                .filter(ItemData.group==group)
+                .filter(ItemData.detail==detail))
 
-    if qry.count() == 1:
-        return qry.one()
-    else:
-        return ItemData(what, group, detail)
+        if qry.count() == 1:
+            result = qry.one()
+        else:
+            result = ItemData(what, group, detail)
 
+        sess_cache[what, group, detail] = result
+        return result
 
 
 
