@@ -113,10 +113,16 @@ def run_capture(db, interval, mozrepl_port):
             else:
                 what = "window"
 
+            wm_class = x11win.get_wm_class()
+            if wm_class is None:
+                group = None
+            else:
+                group = unicode(wm_class[0])
+
             title = unicode(get_name(x11win))
             SampleItem(sample=smp,
                     what=what,
-                    group=unicode(x11win.get_wm_class()[0]),
+                    group=group,
                     detail=title,
                     session=session)
 
